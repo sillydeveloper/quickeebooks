@@ -6,14 +6,17 @@ module Quickeebooks
       class Customer < Quickeebooks::Windows::Service::ServiceBase
         
         def create(customer)
-          raise InvalidModelException unless customer.valid?
-          xml = customer.to_xml_ns
-          response = do_http_post(url_for_resource(Quickeebooks::Windows::Model::Customer.resource_for_singular), valid_xml_document(xml))
-          if response.code.to_i == 200
-            Quickeebooks::Windows::Model::Customer.from_xml(response.body)
-          else
-            nil
-          end
+          # XML is a wrapped 'object' where the type is specified as an attribute
+          #    <Object xsi:type="Invoice">
+          xml_node = customer.to_xml(:name => 'Object')
+          xml_node.set_attribute('xsi:type', 'Customer')
+          xml = <<-XML
+          <Add xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" RequestId="#{guid}" xmlns="http://www.intuit.com/sb/cdm/v2">
+          <ExternalRealmId>#{self.realm_id}</ExternalRealmId>
+          #{xml_node}
+          </Add>
+          XML
+          perform_write(Quickeebooks::Windows::Model::Customer, xml)
         end
 
         def list(filters = [], page = 1, per_page = 20, sort = nil, options = {})
