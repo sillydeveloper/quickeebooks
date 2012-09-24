@@ -4,6 +4,17 @@ module Quickeebooks
   module Windows
     module Service
       class Customer < Quickeebooks::Windows::Service::ServiceBase
+        
+        def create(customer)
+          raise InvalidModelException unless customer.valid?
+          xml = customer.to_xml_ns
+          response = do_http_post(url_for_resource(Quickeebooks::Windows::Model::Customer.resource_for_singular), valid_xml_document(xml))
+          if response.code.to_i == 200
+            Quickeebooks::Windows::Model::Customer.from_xml(response.body)
+          else
+            nil
+          end
+        end
 
         def list(filters = [], page = 1, per_page = 20, sort = nil, options = {})
           custom_field_query = '<?xml version="1.0" encoding="utf-8"?>'
