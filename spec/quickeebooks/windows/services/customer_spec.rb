@@ -56,5 +56,18 @@ describe "Quickeebooks::Windows::Service::Customer" do
     customer = service.fetch_by_id(341)
     customer.name.should == "Wine Stop"
   end
+  
+  it "can create a customer" do
+    xml = File.read(File.dirname(__FILE__) + "/../../../xml/windows/customer.xml")
+    model = Quickeebooks::Windows::Model::Customer
+    service = Quickeebooks::Windows::Service::Customer.new
+    service.access_token = @oauth
+    service.realm_id = @realm_id
+    FakeWeb.register_uri(:post, service.url_for_resource(model::REST_RESOURCE), :status => ["200", "OK"], :body => xml)
+    customer = Quickeebooks::Windows::Model::Customer.new
+    customer.name = "Wine House"
+    result = service.create(customer)
+    result.id.value.to_i.should > 0
+  end
 
 end
